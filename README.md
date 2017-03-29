@@ -181,3 +181,4 @@ Include PyRow in your code with the following line of code:
 `csafe_cmd.py` - converts between csafe commands and byte arrays for pyrow.py, user does not need to load this file directly
 
 `csafe_dic.py` - contains dictionaries of the csafe commands to be used by csafe_cmd.py, user does not need to load this file directly
+
