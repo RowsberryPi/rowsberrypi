@@ -1,0 +1,10 @@
+# Example Config file - change and save in ~/.yamjam/config.yaml
+# then, from the shell, run: chmod -R go-rwx ~/.yamjam
+pyrow:
+   email_host: 'your.host.com'
+   email_port: '587'
+   email_use_tls: True
+   email_host_user: 'yourlogin@yourhost.com'
+   email_host_password: 'yourpassword'
+   email_fromaddress: 'roosendaalsander@gmail.com'
+   email_recipients: ['workouts@rowsandall.com','roosendaalsander@gmail.com']
