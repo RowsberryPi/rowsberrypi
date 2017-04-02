@@ -6,5 +6,5 @@ pyrow:
    email_use_tls: True
    email_host_user: 'yourlogin@yourhost.com'
    email_host_password: 'yourpassword'
-   email_fromaddress: 'roosendaalsander@gmail.com'
+   email_from_address: 'roosendaalsander@gmail.com'
    email_recipients: ['workouts@rowsandall.com','roosendaalsander@gmail.com']

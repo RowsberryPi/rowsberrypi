@@ -6,17 +6,17 @@ def readme():
     with open('README.md') as f:
 	return f.read()
 
-setup(name='pyrow',
+setup(name='rowsberrypi',
 
       version=re.search(
 
 	  '^__version__\s*=\s*"(.*)"',
-	  open('pyrow/pyrow.py').read(),
+	  open('rowsberrypi/rowsberrypi.py').read(),
 	  re.M
 
 	  ).group(1),
 
-      description='The pyrow library to connect to your Concept2 rower',
+      description='The rowsberrypi library to connect to your Concept2 rower',
 
       long_description=readme(),
 
@@ -28,7 +28,7 @@ setup(name='pyrow',
 
       license='MIT',
 
-      # packages=['pyrow'],
+      # packages=['rowsberrypi'],
       packages = find_packages(),
 
       keywords = 'rowing ergometer concept2',
@@ -40,20 +40,20 @@ setup(name='pyrow',
 
       zip_safe=False,
       include_package_data=True,
-      # relative to the pyrow directory
+      # relative to the rowsberrypi directory
       package_data={
 	  },
 
       entry_points = {
 	  "console_scripts": [
-	      'strokelog = pyrow.strokelog:main',
-              'workoutlogger = pyrow.workoutlogger:main',
+	      'strokelog = rowsberrypi.strokelog:main',
+              'workoutlogger = rowsberrypi.workoutlogger:main',
 	      ]
 	  },
 
       scripts=[
-	  'pyrow/strokelog.py',
-          'pyrow/workoutlogger.py',
+	  'rowsberrypi/strokelog.py',
+          'rowsberrypi/workout_logger.py',
 	  ]
 
       )
