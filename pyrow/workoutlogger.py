@@ -13,7 +13,7 @@
 # Elapsed time decreases in time based intervals
 
 from YamJam import yamjam
-from . import pyrow, find
+from pyrow.performance_monitor import PerformanceMonitor
 import time
 import logging
 from usb.core import USBError
@@ -152,11 +152,11 @@ def main():
         while True:
             l = 0
             while l == 0:
-                ergs = list(find())
+                ergs = list(PerformanceMonitor.find())
                 l = len(ergs)
                 time.sleep(1)
                 
-            erg = pyrow(ergs[0])
+            erg = ergs[0]
             logging.info("Connected to erg.")
 
 
