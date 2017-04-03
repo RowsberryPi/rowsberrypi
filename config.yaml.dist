@@ -1,6 +1,5 @@
-# Example Config file - change and save in ~/.yamjam/config.yaml
-# then, from the shell, run: chmod -R go-rwx ~/.yamjam
-pyrow:
+# Example Config file - change and save in ~/config.yaml
+rowsberrypi:
    email_host: 'your.host.com'
    email_port: '587'
    email_use_tls: True

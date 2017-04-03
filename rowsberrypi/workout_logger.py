@@ -7,10 +7,11 @@ from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from os.path import expanduser
 
-from YamJam import yamjam
 from pyrow.performance_monitor import PerformanceMonitor
 from usb.core import USBError
+from yaml import load
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -20,23 +21,15 @@ workoutstateidle = [0, 10, 11, 12, 13]
 workoutstatewait = [2, 6, 7, 8, 9]
 workoutstatestroke = [1, 3, 4, 5]
 
-try:
-    CFG = yamjam()['rowsberrypi']
-    email_host = CFG['email_host']
-    email_port = CFG['email_port']
-    email_use_tls = CFG['email_use_tls']
-    email_host_user = CFG['email_host_user']
-    email_host_password = CFG['email_host_password']
-    email_from_address = CFG['email_from_address']
-    email_recipients = CFG['email_recipients']
-except KeyError:
-    email_host = ''
-    email_port = ''
-    email_use_tls = ''
-    email_host_user = ''
-    email_host_password = ''
-    email_from_address = ''
-    email_recipients = ''
+
+def load_config():
+    try:
+        config_file = os.path.abspath(os.path.join(expanduser('~'), 'config.yaml'))
+        with open(config_file, 'r') as f:
+            return load(f)['rowsberrypi']
+    except KeyError:
+        logging.error('Unable to load email config.')
+        return None
 
 
 def send_email(filename):
@@ -63,17 +56,20 @@ def send_email(filename):
                     'attachment; filename="{}"'.format(os.path.basename(filename)))
     msg.attach(part)
 
-    msg.add_header('From', email_from_address)
-    msg.add_header('To', email_recipients)
+    config = load_config()
+
+    msg.add_header('From', config['email_from_address'])
+    msg.add_header('To', config['email_recipients'])
     msg.add_header('Subject', msgsubject)
 
     # The actual email sendy bits
-    server = smtplib.SMTP('%s:%s' % (email_host, email_port))
+    server = smtplib.SMTP('%s:%s' % (config['email_host'], config['email_port']))
     server.set_debuglevel(True)
-    if email_use_tls:
+    if config['email_use_tls']:
         server.starttls()
-        server.login(email_host_user, email_host_password)
+        server.login(config['email_host_user'], config['email_host_password'])
 
+    email_recipients = config['email_recipients']
     if not isinstance(email_recipients, list):
         email_recipients = [email_recipients]
     server.sendmail(msg['From'], email_recipients, msg.as_string())
@@ -83,9 +79,15 @@ def send_email(filename):
 
 def stroke_log(erg, workout):
     # Open and prepare file
-    filename = 'workouts/rowsberrypi_' + time.strftime("%Y%m%d-%H%M%S") + '.csv'
+    filename = os.path.abspath(
+        os.path.join(
+            expanduser('~'),
+            'workouts/rowsberrypi_' + time.strftime("%Y%m%d-%H%M%S") + '.csv'
+        )
+    )
     logging.debug('starting to log to file %s', filename)
     write_file = open(filename, 'w')
+
     write_file.write(
         'lapIdx,'
         'Timestamp (sec),'
@@ -107,47 +109,48 @@ def stroke_log(erg, workout):
     # Loop until workout ends
     while workout.get_status() in workoutstateactive:
 
-        forceplot = erg.get_force_plot()
+        force_plot = erg.get_force_plot()
         # Loop while waiting for drive
-        while forceplot.get_stroke_state() not in workoutstatewait and \
+        while force_plot.get_stroke_state() not in workoutstatewait and \
                         workout.get_status() in workoutstatestroke:
             # ToDo: sleep?
-            forceplot = erg.get_force_plot()
+            force_plot = erg.get_force_plot()
             workout = erg.get_workout()
 
         # Record force data during the drive
-        force = forceplot['forceplot']  # start of pull (when strokestate first changed to 2)
+        force = force_plot.get_force_plot()  # start of pull (when strokestate first changed to 2)
         monitor = erg.get_monitor(extrametrics=True)  # get monitor data for start of stroke
         # Loop during drive
-        while forceplot['strokestate'] in workoutstatewait:
+        while force_plot.get_stroke_state() in workoutstatewait:
             # ToDo: sleep?
-            forceplot = erg.get_force_plot()
-            force.extend(forceplot['forceplot'])
+            force_plot = erg.get_force_plot()
+            force.extend(force_plot.get_force_plot())
 
-        forceplot = erg.get_force_plot()
-        force.extend(forceplot.get_force_plot())
+        force_plot = erg.get_force_plot()
+        force.extend(force_plot.get_force_plot())
 
         # Write data to write_file
-        workoutdata = [
+        workout = [
             monitor.get_workout_int_count(),
             time.time(),
             monitor.get_time(),
-            monitor['distance'],
-            monitor['spm'],
-            monitor['pace'],
-            monitor['heartrate'],
-            monitor['strokeaverageforce'],
-            monitor['strokepeakforce'],
-            monitor['strokelength'],
-            monitor['strokedrivetime'],
-            monitor['strokerecoverytime'],
-            monitor['workperstroke'],
-            workout['state']
+            monitor.get_distance(),
+            monitor.get_spm(),
+            monitor.get_pace_500(),
+            monitor.get_heartrate(),
+            monitor.get_stroke_average_force(),
+            monitor.get_stroke_peak_force(),
+            monitor.get_stroke_length(),
+            monitor.get_stroke_drive_time(),
+            monitor.get_stroke_recovery_time(),
+            monitor.get_work_per_stroke(),
+            workout.get_workout_state()
         ]
 
         force_data = ",".join([str(f) for f in force])
+        workout_data = ','.join([str(w) for w in workout])
 
-        write_file.write(workoutdata + force_data + '\n')
+        write_file.write(workout_data + force_data + '\n')
 
         # Get workout conditions
         workout = erg.get_workout()
@@ -176,7 +179,7 @@ def main():
             try:
                 while True:
                     logging.info("Waiting for workout to start.")
-                    while workout['state'] in workoutstateidle:
+                    while workout.get_workout_state() in workoutstateidle:
                         time.sleep(1)
                         workout = erg.get_workout()
 
@@ -185,7 +188,7 @@ def main():
                     logging.info("Written to file " + filename)
                     logging.info("Workout has ended.")
                     # email sending
-                    if email_host != '':
+                    if load_config() is not None:
                         logging.info("Sending email.")
                         send_email(filename)
                     workout = erg.get_workout()
@@ -193,3 +196,7 @@ def main():
                 logging.info("Workout interrupted.")
     except USBError:
         logging.info("USB Erg Disconnected.")
+
+
+if __name__ == '__main__':
+    main()
