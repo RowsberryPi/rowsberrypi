@@ -1,5 +1,6 @@
 import logging
 import os
+from os.path import expanduser
 import re
 import smtplib
 import time
@@ -7,7 +8,6 @@ from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from os.path import expanduser
 
 from pyrow.performance_monitor import PerformanceMonitor
 from usb.core import USBError
@@ -15,18 +15,18 @@ from yaml import load
 
 logging.basicConfig(level=logging.DEBUG)
 
-workoutstateactive = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-workoutstateidle = [0, 10, 11, 12, 13]
+WORKOUT_STATE_ACTIVE = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+WORKOUT_STATE_IDLE = [0, 10, 11, 12, 13]
 
-workoutstatewait = [2, 6, 7, 8, 9]
-workoutstatestroke = [1, 3, 4, 5]
+WORKOUT_STATE_WAIT = [2, 6, 7, 8, 9]
+WORKOUT_STATE_STROKE = [1, 3, 4, 5]
 
 
 def load_config():
     try:
-        config_file = os.path.abspath(os.path.join(expanduser('~'), 'config.yaml'))
-        with open(config_file, 'r') as f:
-            return load(f)['rowsberrypi']
+        config_file_path = os.path.abspath(os.path.join(expanduser('~'), 'config.yaml'))
+        with open(config_file_path, 'r') as config_file:
+            return load(config_file)['rowsberrypi']
     except KeyError:
         logging.error('Unable to load email config.')
         return None
@@ -107,12 +107,12 @@ def stroke_log(erg, workout):
     )
 
     # Loop until workout ends
-    while workout.get_status() in workoutstateactive:
+    while workout.get_status() in WORKOUT_STATE_ACTIVE:
 
         force_plot = erg.get_force_plot()
         # Loop while waiting for drive
-        while force_plot.get_stroke_state() not in workoutstatewait and \
-                        workout.get_status() in workoutstatestroke:
+        while force_plot.get_stroke_state() not in WORKOUT_STATE_WAIT and \
+                workout.get_status() in WORKOUT_STATE_STROKE:
             # ToDo: sleep?
             force_plot = erg.get_force_plot()
             workout = erg.get_workout()
@@ -121,7 +121,7 @@ def stroke_log(erg, workout):
         force = force_plot.get_force_plot()  # start of pull (when strokestate first changed to 2)
         monitor = erg.get_monitor(extrametrics=True)  # get monitor data for start of stroke
         # Loop during drive
-        while force_plot.get_stroke_state() in workoutstatewait:
+        while force_plot.get_stroke_state() in WORKOUT_STATE_WAIT:
             # ToDo: sleep?
             force_plot = erg.get_force_plot()
             force.extend(force_plot.get_force_plot())
@@ -164,10 +164,10 @@ def main():
     # Connecting to erg
     try:
         while True:
-            l = 0
-            while l == 0:
+            num_ergs = 0
+            while num_ergs == 0:
                 ergs = list(PerformanceMonitor.find())
-                l = len(ergs)
+                num_ergs = len(ergs)
                 time.sleep(1)
 
             erg = PerformanceMonitor(ergs[0])
@@ -179,7 +179,7 @@ def main():
             try:
                 while True:
                     logging.info("Waiting for workout to start.")
-                    while workout.get_workout_state() in workoutstateidle:
+                    while workout.get_workout_state() in WORKOUT_STATE_IDLE:
                         time.sleep(1)
                         workout = erg.get_workout()
 
