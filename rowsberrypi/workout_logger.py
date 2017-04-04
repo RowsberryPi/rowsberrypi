@@ -89,21 +89,21 @@ def stroke_log(erg, workout):
     write_file = open(filename, 'w')
 
     write_file.write(
-        'lapIdx,'
+        ' lapIdx,'
         'Timestamp (sec),'
-        'ElapsedTime (sec),'
-        'Horizontal (meters),'
-        'Cadence (stokes/min),'
-        'Stroke500mPace (sec/500m),'
-        'HRCur (bpm),'
-        'AverageDriveForce (lbs),'
-        'PeakDriveForce (lbs),'
-        'DriveLength (meters),'
-        'DriveTime (ms),'
-        'StrokeRecoveryTime (ms),'
-        'WorkPerStroke (J),'
-        'WorkoutState,'
-        'Force Plot\n'
+        ' ElapsedTime (sec),'
+        ' Horizontal (meters),'
+        ' Cadence (stokes/min),'
+        ' Stroke500mPace (sec/500m),'
+        ' HRCur (bpm),'
+        ' AverageDriveForce (lbs),'
+        ' PeakDriveForce (lbs),'
+        ' DriveLength (meters),'
+        ' DriveTime (ms),'
+        ' StrokeRecoveryTime (ms),'
+        ' WorkPerStroke (J),'
+        ' WorkoutState,'
+        ' Force Plot\n'
     )
 
     # Loop until workout ends
