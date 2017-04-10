@@ -1,17 +1,20 @@
 import logging
 import os
-from os.path import expanduser
 import re
 import smtplib
 import time
+from csv import DictWriter
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from os.path import expanduser
 
 from pyrow.performance_monitor import PerformanceMonitor
 from usb.core import USBError
 from yaml import load
+
+from rowsberrypi.const import csv_headers
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -36,8 +39,8 @@ def send_email(filename):
     msgsubject = 'Workout from Rowsberry Pi'
     htmlmsgtext = """This is a workout recorded with Rowsberry Pi</br>
                      Yup. Yup. Yup.</br>"""
-    msgtext = htmlmsgtext.replace('<b>', '').replace('</b>', '').replace('<br>', "\r").replace(
-        '</br>', "\r").replace('<br/>', "\r").replace('</a>', '')
+    msgtext = htmlmsgtext.replace('<b>', '').replace('</b>', '').replace('<br>', '\r').replace(
+        '</br>', '\r').replace('<br/>', '\r').replace('</a>', '')
     msgtext = re.sub('<.*?>', '', msgtext)
 
     msg = MIMEMultipart()
@@ -82,82 +85,62 @@ def stroke_log(erg, workout):
     filename = os.path.abspath(
         os.path.join(
             expanduser('~'),
-            'workouts/rowsberrypi_' + time.strftime("%Y%m%d-%H%M%S") + '.csv'
+            'workouts/rowsberrypi_' + time.strftime('%Y%m%d-%H%M%S') + '.csv'
         )
     )
     logging.debug('starting to log to file %s', filename)
-    write_file = open(filename, 'w')
+    with open(filename, 'w') as csv_file:
+        writer = DictWriter(csv_file, fieldnames=csv_headers)
+        writer.writeheader()
 
-    write_file.write(
-        ' lapIdx,'
-        'Timestamp (sec),'
-        ' ElapsedTime (sec),'
-        ' Horizontal (meters),'
-        ' Cadence (stokes/min),'
-        ' Stroke500mPace (sec/500m),'
-        ' HRCur (bpm),'
-        ' AverageDriveForce (lbs),'
-        ' PeakDriveForce (lbs),'
-        ' DriveLength (meters),'
-        ' DriveTime (ms),'
-        ' StrokeRecoveryTime (ms),'
-        ' WorkPerStroke (J),'
-        ' WorkoutState,'
-        ' Force Plot\n'
-    )
+        # Loop until workout ends
+        while workout.get_status() in WORKOUT_STATE_ACTIVE:
 
-    # Loop until workout ends
-    while workout.get_status() in WORKOUT_STATE_ACTIVE:
-
-        force_plot = erg.get_force_plot()
-        # Loop while waiting for drive
-        while force_plot.get_stroke_state() not in WORKOUT_STATE_WAIT and \
-                workout.get_status() in WORKOUT_STATE_STROKE:
-            # ToDo: sleep?
             force_plot = erg.get_force_plot()
-            workout = erg.get_workout()
+            # Loop while waiting for drive
+            while force_plot.get_stroke_state() not in WORKOUT_STATE_WAIT and \
+                            workout.get_status() in WORKOUT_STATE_STROKE:
+                # ToDo: sleep?
+                force_plot = erg.get_force_plot()
+                workout = erg.get_workout()
 
-        # Record force data during the drive
-        force = force_plot.get_force_plot()  # start of pull (when strokestate first changed to 2)
-        monitor = erg.get_monitor(extrametrics=True)  # get monitor data for start of stroke
-        # Loop during drive
-        while force_plot.get_stroke_state() in WORKOUT_STATE_WAIT:
-            # ToDo: sleep?
+            # Record force data during the drive
+            force = force_plot.get_force_plot()  # start of pull (when strokestate first changed to 2)
+            monitor = erg.get_monitor(extrametrics=True)  # get monitor data for start of stroke
+            # Loop during drive
+            while force_plot.get_stroke_state() in WORKOUT_STATE_WAIT:
+                # ToDo: sleep?
+                force_plot = erg.get_force_plot()
+                force.extend(force_plot.get_force_plot())
+
             force_plot = erg.get_force_plot()
             force.extend(force_plot.get_force_plot())
 
-        force_plot = erg.get_force_plot()
-        force.extend(force_plot.get_force_plot())
+            # Write data to write_file
+            workout = [
+                monitor.get_workout_int_count(),
+                time.time(),
+                monitor.get_time(),
+                monitor.get_distance(),
+                monitor.get_spm(),
+                monitor.get_pace_500(),
+                monitor.get_heartrate(),
+                monitor.get_stroke_average_force(),
+                monitor.get_stroke_peak_force(),
+                monitor.get_stroke_length(),
+                monitor.get_stroke_drive_time(),
+                monitor.get_stroke_recovery_time(),
+                monitor.get_work_per_stroke(),
+                workout.get_workout_state()
+            ]
 
-        # Write data to write_file
-        workout = [
-            monitor.get_workout_int_count(),
-            time.time(),
-            monitor.get_time(),
-            monitor.get_distance(),
-            monitor.get_spm(),
-            monitor.get_pace_500(),
-            monitor.get_heartrate(),
-            monitor.get_stroke_average_force(),
-            monitor.get_stroke_peak_force(),
-            monitor.get_stroke_length(),
-            monitor.get_stroke_drive_time(),
-            monitor.get_stroke_recovery_time(),
-            monitor.get_work_per_stroke(),
-            workout.get_workout_state()
-        ]
+            writer.writerow([workout, force])
 
-        force_data = ",".join([str(f) for f in force])
-        workout_data = ','.join([str(w) for w in workout])
+            # Get workout conditions
+            workout = erg.get_workout()
 
-        write_file.write(workout_data + force_data + '\n')
-
-        # Get workout conditions
-        workout = erg.get_workout()
-
-    logging.debug("Closing file.")
-    write_file.close()
-    return write_file.name
+    logging.debug('Closing file.')
+    return filename
 
 
 def main():
@@ -171,31 +154,31 @@ def main():
                 time.sleep(1)
 
             erg = PerformanceMonitor(ergs[0])
-            logging.info("Connected to erg.")
+            logging.info('Connected to erg.')
 
             # Loop until workout has begun
             workout = erg.get_workout()
 
             try:
                 while True:
-                    logging.info("Waiting for workout to start.")
+                    logging.info('Waiting for workout to start.')
                     while workout.get_workout_state() in WORKOUT_STATE_IDLE:
                         time.sleep(1)
                         workout = erg.get_workout()
 
-                    logging.info("Workout has begun.")
+                    logging.info('Workout has begun.')
                     filename = stroke_log(erg, workout)
-                    logging.info("Written to file " + filename)
-                    logging.info("Workout has ended.")
+                    logging.info('Written to file ' + filename)
+                    logging.info('Workout has ended.')
                     # email sending
                     if load_config() is not None:
-                        logging.info("Sending email.")
+                        logging.info('Sending email.')
                         send_email(filename)
                     workout = erg.get_workout()
             except KeyboardInterrupt:
-                logging.info("Workout interrupted.")
+                logging.info('Workout interrupted.')
     except USBError:
-        logging.info("USB Erg Disconnected.")
+        logging.info('USB Erg Disconnected.')
 
 
 if __name__ == '__main__':
