@@ -166,7 +166,7 @@ def main():
         while True:
             num_ergs = 0
             while num_ergs == 0:
-                ergs = list(PerformanceMonitor.find())
+                ergs = PerformanceMonitor.find()
                 num_ergs = len(ergs)
                 time.sleep(1)
 
