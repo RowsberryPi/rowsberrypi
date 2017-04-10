@@ -1,5 +1,6 @@
 import logging
 import os
+from os.path import expanduser
 import re
 import smtplib
 import time
@@ -8,13 +9,12 @@ from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from os.path import expanduser
 
 from pyrow.performance_monitor import PerformanceMonitor
 from usb.core import USBError
 from yaml import load
 
-from rowsberrypi.const import csv_headers
+from rowsberrypi import const  # pylint:disable=E0611
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -90,7 +90,7 @@ def stroke_log(erg, workout):
     )
     logging.debug('starting to log to file %s', filename)
     with open(filename, 'w') as csv_file:
-        writer = DictWriter(csv_file, fieldnames=csv_headers)
+        writer = DictWriter(csv_file, fieldnames=const.CSV_HEADERS)
         writer.writeheader()
 
         # Loop until workout ends
@@ -99,13 +99,14 @@ def stroke_log(erg, workout):
             force_plot = erg.get_force_plot()
             # Loop while waiting for drive
             while force_plot.get_stroke_state() not in WORKOUT_STATE_WAIT and \
-                            workout.get_status() in WORKOUT_STATE_STROKE:
+                    workout.get_status() in WORKOUT_STATE_STROKE:
                 # ToDo: sleep?
                 force_plot = erg.get_force_plot()
                 workout = erg.get_workout()
 
             # Record force data during the drive
-            force = force_plot.get_force_plot()  # start of pull (when strokestate first changed to 2)
+            # start of pull (when strokestate first changed to 2)
+            force = force_plot.get_force_plot()
             monitor = erg.get_monitor(extrametrics=True)  # get monitor data for start of stroke
             # Loop during drive
             while force_plot.get_stroke_state() in WORKOUT_STATE_WAIT:

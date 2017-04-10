@@ -2,7 +2,7 @@
 
 __version__ = '0.1.0',
 
-csv_headers = [
+CSV_HEADERS = [
     'lapIdx',
     'Timestamp (sec)',
     'ElapsedTime (sec)',
