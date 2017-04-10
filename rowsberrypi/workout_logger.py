@@ -149,9 +149,8 @@ def main():
     try:
         while True:
             num_ergs = 0
-            while num_ergs == 0:
+            while len(ergs) == 0:
                 ergs = PerformanceMonitor.find()
-                num_ergs = len(ergs)
                 time.sleep(1)
 
             erg = PerformanceMonitor(ergs[0])
