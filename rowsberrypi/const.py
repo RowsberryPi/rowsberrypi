@@ -2,6 +2,8 @@
 
 __version__ = '0.1.0',
 
+# Is ' Power (watts)' missing?
+
 CSV_HEADERS = [
     ' lapIdx',
     'Timestamp (sec)',
