@@ -3,19 +3,19 @@
 __version__ = '0.1.0',
 
 CSV_HEADERS = [
-    'lapIdx',
+    ' lapIdx',
     'Timestamp (sec)',
-    'ElapsedTime (sec)',
-    'Horizontal (meters)',
-    'Cadence (stokes/min)',
-    'Stroke500mPace (sec/500m)',
-    'HRCur (bpm)',
-    'AverageDriveForce (lbs)',
-    'PeakDriveForce (lbs)',
-    'DriveLength (meters)',
-    'DriveTime (ms)',
-    'StrokeRecoveryTime (ms)',
-    'WorkPerStroke (J)',
-    'WorkoutState',
-    'Force Plot'
+    ' ElapsedTime (sec)',
+    ' Horizontal (meters)',
+    ' Cadence (stokes/min)',
+    ' Stroke500mPace (sec/500m)',
+    ' HRCur (bpm)',
+    ' AverageDriveForce (lbs)',
+    ' PeakDriveForce (lbs)',
+    ' DriveLength (meters)',
+    ' DriveTime (ms)',
+    ' StrokeRecoveryTime (ms)',
+    ' WorkPerStroke (J)',
+    ' WorkoutState',
+    ' Force Plot'
 ]
