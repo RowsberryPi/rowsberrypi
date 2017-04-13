@@ -88,6 +88,11 @@ def stroke_log(erg, workout):
             'workouts/rowsberrypi_' + time.strftime('%Y%m%d-%H%M%S') + '.csv'
         )
     )
+
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     logging.debug('starting to log to file %s', filename)
     with open(filename, 'w') as csv_file:
         writer = DictWriter(csv_file, fieldnames=const.CSV_HEADERS)
@@ -107,7 +112,7 @@ def stroke_log(erg, workout):
             # Record force data during the drive
             # start of pull (when strokestate first changed to 2)
             force = force_plot.get_force_plot()
-            monitor = erg.get_monitor(extrametrics=True)  # get monitor data for start of stroke
+            monitor = erg.get_monitor(extra_metrics=True)  # get monitor data for start of stroke
             # Loop during drive
             while force_plot.get_stroke_state() in WORKOUT_STATE_WAIT:
                 # ToDo: sleep?
@@ -148,12 +153,12 @@ def main():
     # Connecting to erg
     try:
         while True:
-            num_ergs = 0
+            ergs = []
             while len(ergs) == 0:
                 ergs = PerformanceMonitor.find()
                 time.sleep(1)
 
-            erg = PerformanceMonitor(ergs[0])
+            erg = ergs[0]
             logging.info('Connected to erg.')
 
             # Loop until workout has begun
