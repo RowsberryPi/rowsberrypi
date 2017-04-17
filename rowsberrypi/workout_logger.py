@@ -80,7 +80,7 @@ def send_email(filename):
     server.quit()  # bye bye
 
 
-def stroke_log(erg, workout):
+def stroke_log(erg, workout,doforce=False):
     # Open and prepare file
     filename = os.path.abspath(
         os.path.join(
@@ -100,7 +100,6 @@ def stroke_log(erg, workout):
 
         # Loop until workout ends
         while workout.get_status() in WORKOUT_STATE_ACTIVE:
-
             force_plot = erg.get_force_plot()
             # Loop while waiting for drive
             while force_plot.get_stroke_state() not in WORKOUT_STATE_WAIT and \
@@ -140,7 +139,10 @@ def stroke_log(erg, workout):
                 workout.get_workout_state()
             ]
 
-            writer.writerow([workout, force])
+            if doforce:
+                writer.writerow([workout, force])
+            else:
+                write.writerow([workout])
 
             # Get workout conditions
             workout = erg.get_workout()
