@@ -142,7 +142,7 @@ def stroke_log(erg, workout,doforce=False):
             if doforce:
                 writer.writerow([workout, force])
             else:
-                write.writerow([workout])
+                writer.writerow([workout])
 
             # Get workout conditions
             workout = erg.get_workout()
