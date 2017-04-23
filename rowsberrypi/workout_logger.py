@@ -100,11 +100,11 @@ def stroke_log(erg, workout,doforce=False):
         writer.writeheader()
 
         # Loop until workout ends
-        while workout.get_status() in WORKOUT_STATE_ACTIVE:
+        while workout.get_workout_state() in WORKOUT_STATE_ACTIVE:
             force_plot = erg.get_force_plot()
             # Loop while waiting for drive
             while force_plot.get_stroke_state() not in WORKOUT_STATE_WAIT and \
-                    workout.get_status() in WORKOUT_STATE_STROKE:
+                    workout.get_workout_state() in WORKOUT_STATE_STROKE:
                 # ToDo: sleep?
                 force_plot = erg.get_force_plot()
                 workout = erg.get_workout()
