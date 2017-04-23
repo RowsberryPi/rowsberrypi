@@ -28,6 +28,7 @@ WORKOUT_STATE_STROKE = [1, 3, 4, 5]
 def load_config():
     try:
         config_file_path = os.path.abspath(os.path.join(expanduser('~'), 'config.yaml'))
+        logging.debug(config_file_path)
         with open(config_file_path, 'r') as config_file:
             return load(config_file)['rowsberrypi']
     except KeyError:
@@ -139,10 +140,16 @@ def stroke_log(erg, workout,doforce=False):
                 workout.get_workout_state()
             ]
 
+
             if doforce:
-                writer.writerow([workout, force])
+                workout = workout+[force]
+                workoutdict = dict(zip(const.CSV_HEADERS,workout))
             else:
-                writer.writerow([workout])
+                hdrs = list(const.CSV_HEADERS)
+                hdrs.remove(' Force Plot')
+                workoutdict = dict(zip(hdrs,workout))
+
+            writer.writerow(workoutdict)
 
             # Get workout conditions
             workout = erg.get_workout()
