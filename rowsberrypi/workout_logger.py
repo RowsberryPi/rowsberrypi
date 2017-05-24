@@ -1,6 +1,5 @@
 import logging
 import os
-from os.path import expanduser
 import re
 import smtplib
 import time
@@ -9,6 +8,7 @@ from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from os.path import expanduser
 
 from pyrow.performance_monitor import PerformanceMonitor
 from usb.core import USBError
@@ -81,7 +81,13 @@ def send_email(filename):
     server.quit()  # bye bye
 
 
-def stroke_log(erg, workout,doforce=False):
+def replace_none(a_dict):
+    for k, v in a_dict.items():
+        if v is None:
+            a_dict[k] = 0
+
+
+def stroke_log(erg, workout, doforce=False):
     # Open and prepare file
     filename = os.path.abspath(
         os.path.join(
@@ -104,7 +110,7 @@ def stroke_log(erg, workout,doforce=False):
             force_plot = erg.get_force_plot()
             # Loop while waiting for drive
             while force_plot.get_stroke_state() not in WORKOUT_STATE_WAIT and \
-                    workout.get_workout_state() in WORKOUT_STATE_STROKE:
+                            workout.get_workout_state() in WORKOUT_STATE_STROKE:
                 # ToDo: sleep?
                 force_plot = erg.get_force_plot()
                 workout = erg.get_workout()
@@ -140,16 +146,15 @@ def stroke_log(erg, workout,doforce=False):
                 workout.get_workout_state()
             ]
 
-
             if doforce:
-                workout = workout+[force]
-                workoutdict = dict(zip(const.CSV_HEADERS,workout))
+                workout = workout + [force]
+                workoutdict = dict(zip(const.CSV_HEADERS, workout))
             else:
                 hdrs = list(const.CSV_HEADERS)
                 hdrs.remove(' Force Plot')
-                workoutdict = dict(zip(hdrs,workout))
+                workoutdict = dict(zip(hdrs, workout))
 
-            writer.writerow(workoutdict)
+            writer.writerow(replace_none(workoutdict))
 
             # Get workout conditions
             workout = erg.get_workout()
